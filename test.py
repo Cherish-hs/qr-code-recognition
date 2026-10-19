@@ -1,51 +1,73 @@
 import cv2
 from datetime import datetime
-img = cv2.imread("images/qr.jpg")   # 读取图片
+# 1. 打开电脑默认摄像头
+cap = cv2.VideoCapture(0)
 
-# 1.检查图片是否读取成功
-if img is None:
-    print("图片读取失败")
+# 检查摄像头是否打开成功
+if not cap.isOpened():
+    print("摄行头打开失败,请检查摄行头是否可用")
     exit()
 
-detector = cv2.QRCodeDetector()   # 二维码识别器
-data, points, _ = detector.detectAndDecode(img)    # 检测并且解码  内容 位置 其他
+# 2. 创建二维码识别器
+detector = cv2.QRCodeDetector()
 
-print("二维码内容：", data)
-print("二维码位置：", points)
-
-# 2. 把识别记录保存到本地
-with open('qr_records.txt',"a",encoding="utf-8") as f:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    if data:
-        f.write(f"识别时间：{now}\n")
-        f.write(f"识别内容：{data}\n")
-        f.write(f"图片路径：images/qr.jpg\n")
-        f.write("识别状态：成功\n")
-    else:
-        f.write(f"识别时间：{now}\n")
-        f.write(f"识别内容：无\n")
-        f.write(f"图片路径：images/qr.jpg\n")
-        f.write("识别状态：失败\n")
-    f.write("-" * 30 + "\n")
+# 记录上一次识别到的内容，避免每次识别都打印
+last_data = ""
 
 
-# 3. 绘制二维码边框
-if points is not None:
-    points = points.astype(int).reshape(-1, 2)
+# 设置识别记录文件
+record_file = "qr_records.txt"
+record_img = "processed_images"
+try:
+    while True:
+        # 3. 获取摄像头当前的一帧画面
+        ret, img = cap.read()
+        if not ret:
+            print("无法获取摄像头画面")
+            break
 
-    # 用绿色线条连接二维码的四个角
-    cv2.polylines(
-        img,     
-        [points],   # 要连接的角点集合
-        True,   # 闭合
-        (0, 255, 0),  # 颜色
-        3   # 线条宽度，像素
-    )
+        # 4.检测并解码
+        data, points, _ = detector.detectAndDecode(img)
 
-    # 4. 将框好的图片保存   # ---- 不会自动创建该文件夹，需要手动创建
-    cv2.imwrite("processed_images/qr.jpg", img)
-    # 创建窗口，显示框好的图片
-    cv2.imshow("QR Code Detection", img)   
-    # 等待键盘输入
-    cv2.waitKey(0)
+        # 5. 如果检测到画框
+        if points is not None:
+            points = points.astype(int).reshape(-1,2)
+            cv2.polylines(
+                img,
+                [points],
+                True,
+                (0, 255, 0),
+                3
+            )
+        # 6. 识别到新的二维码内容时，保存记录输出到终端
+        if data and data != last_data:
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            print("识别时间：", now)
+            print("识别内容：", data)
+
+
+            # 将识别并框住的图片保存
+            filename = now + ".jpg"
+            cv2.imwrite(record_img + "/" + filename, img)
+            print("识别并框住的图片已保存到：",record_img + "/" + filename)
+
+            # 以追加模式打开文本内容
+            with open(record_file, "a",encoding="utf-8") as f:
+                f.write(f"识别时间：{now}\n")
+                f.write(f"识别内容：{data}\n")
+                f.write("-" * 40 + "\n")
+            print("识别记录已保存到：",record_file)
+            last_data = data
+        
+        # 7.显示实时画面
+        cv2.imshow("二维码识别", img)
+
+        # 按 q 键退出  -----这个按 q 需要将鼠标聚焦在窗口上
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+finally:
+    # 8. 释放摄像头和关闭窗口
+    cap.release()
     cv2.destroyAllWindows()
+    print("程序已退出")
