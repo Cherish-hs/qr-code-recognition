@@ -218,3 +218,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ==============================
+# QR / Barcode recognition project
+# ==============================
+
+# Recognition records
+pyzbar_records.csv
+pyzbar_records.txt
+
+# Recognition images
+pyzbar_images/
