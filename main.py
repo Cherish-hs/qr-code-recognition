@@ -63,6 +63,7 @@ if not cap.isOpened():
     exit()
 
 pending_url = None
+opened_urls = set()  # 记录已经打开过的网址 
 
 try:
     while True:
@@ -76,7 +77,18 @@ try:
             break
 
         # 检测并解码二维码、条形码
-        results = decode(img)
+        # 转换为灰度图
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # 增强局部对比度
+        clahe = cv2.createCLAHE(
+            clipLimit=2.0,
+            tileGridSize=(8, 8)
+        )
+        enhanced = clahe.apply(gray)
+
+        # 使用增强后的图像识别
+        results = decode(enhanced)
 
         # 当前一帧识别到的有效条码集合
         frames_codes = set()
@@ -95,8 +107,9 @@ try:
             # 否则，忽略该条码
             if code_type == "QRCODE":
                 url = get_valid_url(data)
-                if url:
+                if url and url not in opened_urls:
                     pending_url = url
+                    opened_urls.add(url)
 
          
 
@@ -192,21 +205,24 @@ try:
             print("识别内容：", data)
             print("图片已保存：", save_path)
             print("识别记录已保存：", record_file2)
-            print("按o打开网址，按q退出程序")
+            print("按q退出程序")
 
         # 显示实时画面
         cv2.imshow("条码识别", img)
 
 
+        # 如果识别到了有效网址，就打开网页
+        if pending_url:
+            url_to_open = pending_url
+            pending_url = None  # 清空，防止每一帧重复打开
+            webbrowser.open(url_to_open)
+            print("已打开网址：", url_to_open)    
+
+
         key = cv2.waitKey(1) & 0xFF
-        if key == ord("o"):
-            if pending_url:
-                webbrowser.open(pending_url)
-                print("已打开网址：", pending_url)      
-            else:
-                print("当前帧没有识别到有效网址")
-        elif key == ord("q"):
+        if key == ord("q"):
             break
+            
 
 finally:
     cap.release()
