@@ -45,10 +45,12 @@
 ```text
 qr_barcode_project/
 ├── .venv/                 # Python 虚拟环境（可选）
-├── test_pyzbar_code.py                # 实时识别程序
+├── main.py                # 实时识别程序
 ├── pyzbar_records.csv     # 识别记录，运行后生成
 ├── pyzbar_images/         # 识别图片，运行后生成
 └── README.md              # 项目说明文档
+├── requirements.txt       # 项目依赖
+├── .gitignore             # Git 忽略文件
 ```
 
 说明：
@@ -82,24 +84,10 @@ source .venv/bin/activate
 
 激活后，终端通常会在命令提示符前显示 `(.venv)`。
 
-### 5.2 安装 Python 依赖
-
-先安装 OpenCV：
+### 5.2 安装 需要的Python 依赖
 
 ```bash
-python -m pip install opencv-python
-```
-
-再安装 Pyzbar：
-
-```bash
-python -m pip install pyzbar
-```
-
-也可以一次安装：
-
-```bash
-python -m pip install opencv-python pyzbar
+python -m pip install -r requirements.txt
 ```
 
 ### 5.3 安装系统依赖
